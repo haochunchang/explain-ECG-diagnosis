@@ -1,3 +1,5 @@
+.devcontainer/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -33,7 +35,7 @@ default/
 data/
 test_tube_logs/
 test_tube_data/
-model_weights/
+model_checkpoints/
 tests/save_dir  
 tests/tests_tt_dir/
 processed/

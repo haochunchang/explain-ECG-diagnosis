@@ -18,6 +18,7 @@ class ECGDataModule(pl.LightningDataModule):
         super().__init__()
 
         self.data_path = data_path
+        self.n_channels = 15
         self.config = self._load_config(config_path)
         self.raw_labels = self._extract_labels(label_path)
 
@@ -40,12 +41,12 @@ class ECGDataModule(pl.LightningDataModule):
     def prepare_data(self, chunk_size=2048):
         # called only on 1 GPU
         path = os.path.dirname(self.data_path)
-        chunks_file_path = join(path, "data-window{}".format(chunk_size))
-        labels_file_path = join(path, "labels-window{}".format(chunk_size))
+        chunks_file_path = join(path, "data-window{}.npy".format(chunk_size))
+        labels_file_path = join(path, "labels-window{}.npy".format(chunk_size))
 
         if os.path.exists(chunks_file_path) and os.path.exists(labels_file_path):
-            self.data = np.load(chunks_file_path + ".npy")
-            self.labels = np.load(labels_file_path + ".npy")
+            self.data = np.load(chunks_file_path)
+            self.labels = np.load(labels_file_path)
         else:
             raw_data = np.load(self.data_path)
             self.data, self.labels = self._split_samples_into_chunks(
@@ -55,6 +56,7 @@ class ECGDataModule(pl.LightningDataModule):
             np.save(labels_file_path, self.labels)
 
     def _split_samples_into_chunks(self, data, label, chunk_size):
+        print("Spliting samples into chunks...")
         chunks = []
         labels = []
         for idx, sample in data.items():
@@ -69,25 +71,23 @@ class ECGDataModule(pl.LightningDataModule):
         return chunks, labels
 
     def setup(self, stage=None):
-        # called on every GPU
         transforms = T.Compose([
             T.ToTensor()
         ])
-        if stage == "fit" or stage is None:
-            self.dataset = ECGDataset(self.data, self.labels, transforms)
+        # if stage == "fit" or stage is None:
+        self.dataset = ECGDataset(self.data, self.labels, transforms)
 
-            train_indices, val_indices = self._split_data_indices(
-                validation_split=self.config["validation_split"],
-                shuffle_dataset=True,
-                random_seed=self.config["random_seed"]
-            )
-            self.train_sampler = SubsetRandomSampler(train_indices)
-            self.val_sampler = SubsetRandomSampler(val_indices)
+        train_indices, val_indices = self._split_data_indices(
+            validation_split=self.config["validation_split"],
+            shuffle_dataset=True
+        )
+        self.train_sampler = SubsetRandomSampler(train_indices)
+        self.val_sampler = SubsetRandomSampler(val_indices)
 
-        if stage == "test" or stage is None:
-            pass
+        # if stage == "test" or stage is None:
+            
 
-    def _split_data_indices(self, validation_split=.2, shuffle_dataset=True, random_seed=56):
+    def _split_data_indices(self, validation_split=.2, shuffle_dataset=True):
         """
         Creating data indices for training and validation splits.
         """
@@ -96,7 +96,6 @@ class ECGDataModule(pl.LightningDataModule):
         split = int(np.floor(validation_split * dataset_size))
 
         if shuffle_dataset:
-            np.random.seed(random_seed)
             np.random.shuffle(indices)
         train_indices, val_indices = indices[split:], indices[:split]
         return train_indices, val_indices
@@ -104,6 +103,7 @@ class ECGDataModule(pl.LightningDataModule):
     def train_dataloader(self):
         return DataLoader(
             self.dataset,
+            num_workers=3,
             batch_size=self.config["batch_size"],
             sampler=self.train_sampler
         )
@@ -111,12 +111,18 @@ class ECGDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             self.dataset,
+            num_workers=3,
             batch_size=self.config["batch_size"],
             sampler=self.val_sampler
         )
 
     def test_dataloader(self):
-        return DataLoader(self.test, batch_size=self.config["batch_size"])
+        return DataLoader(
+            self.dataset,
+            num_workers=3,
+            batch_size=self.config["batch_size"],
+            sampler=self.val_sampler
+        )
 
 
 class ECGDataset(Dataset):
