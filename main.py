@@ -18,6 +18,7 @@ data_path = join(path, "data_raw.npz")
 label_path = join(path, "meta.csv")
 config_path = join(os.getcwd(), "config.json")
 ckpt_path = join(os.getcwd(), "model_checkpoints")
+model_name = "mycnn-epoch=00-val_loss=0.94.ckpt"
 
 
 def train(args, dm, net):
@@ -53,11 +54,10 @@ def train(args, dm, net):
     trainer.fit(net, datamodule=dm)
 
 
-def test(args, dm, net, model_name):
+def test(args, dm, net):
 
-    model = MyCNN.load_from_checkpoint(
+    model = net.load_from_checkpoint(
         checkpoint_path=join(ckpt_path, model_name),
-        model=net,
         num_channel=dm.n_channels,
         num_class=dm.n_classes
     )
@@ -71,7 +71,33 @@ def test(args, dm, net, model_name):
 
 
 def explain(args, dm, net):
-    pass
+    """
+    Explaining model predictions by visualization
+    """
+    from explain import GradCam, show_cam_on_image, preprocess_signals
+    # from explain import GuidedBackpropReLUModel
+    dm.prepare_data()
+    dm.setup()
+
+    model = net.load_from_checkpoint(
+        checkpoint_path=join(ckpt_path, model_name),
+        num_channel=dm.n_channels,
+        num_class=dm.n_classes
+    )
+    dataloader = dm.train_dataloader()
+    data = next(iter(dataloader))
+
+    sample = preprocess_signals(data['signal'])
+    # label = data['label']
+
+    grad_cam = GradCam(
+        model=model.network,
+        feature_module=model.network[:9],
+        target_layer_names=["8"]
+    )
+    mask = grad_cam(sample)
+
+    show_cam_on_image(sample, mask)
 
 
 def main(args):
@@ -84,8 +110,7 @@ def main(args):
     if args.mode == "train":
         train(args, ecg_dm, net)
     elif args.mode == "test":
-        model_name = "mycnn-epoch=00-val_loss=0.94.ckpt"
-        test(args, ecg_dm, net, model_name)
+        test(args, ecg_dm, net)
     elif args.mode == "explain":
         explain(args, ecg_dm, net)
     else:

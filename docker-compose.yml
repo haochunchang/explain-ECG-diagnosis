@@ -3,11 +3,11 @@ services:
   development:
     build: ./
     command: /bin/bash
-    working_dir: /usr/src/explain-ecg-diagnosis
+    working_dir: /usr/src/hcc/explain-ecg-diagnosis
     stdin_open: true
     tty: true 
     ports:
       - "3000:3000"
       - "6006:6006"
     volumes:
-      - ./:/usr/src/explain-ecg-diagnosis
+      - ./:/usr/src/hcc/explain-ecg-diagnosis

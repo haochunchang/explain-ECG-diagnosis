@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Author: Hao Chun Chang <changhaochun84@gmail.comm>
+#
+
 import os
 from os.path import join
 import json
@@ -85,7 +89,6 @@ class ECGDataModule(pl.LightningDataModule):
         self.val_sampler = SubsetRandomSampler(val_indices)
 
         # if stage == "test" or stage is None:
-            
 
     def _split_data_indices(self, validation_split=.2, shuffle_dataset=True):
         """

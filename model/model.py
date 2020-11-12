@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# Author: Hao Chun Chang <changhaochun84@gmail.comm>
+#
+
 import torch
 import torch.nn as nn
 from torch.optim import Adam
@@ -57,7 +61,12 @@ class MyCNN(pl.LightningModule):
         loss, y, y_pred = self.step(batch, batch_idx)
 
         self.train_acc(y_pred, y)
-        self.log('train_accuracy', self.train_acc, on_step=True, on_epoch=False)
+        self.log(
+            'train_accuracy',
+            self.train_acc,
+            on_step=True,
+            on_epoch=False
+        )
         self.log('train_loss', loss)
         return loss
 
