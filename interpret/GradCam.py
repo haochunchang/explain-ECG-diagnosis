@@ -4,6 +4,7 @@
 # ref: https://github.com/jacobgil/pytorch-grad-cam/blob/master/gradcam.py
 
 import torch
+from torchvision import transforms
 from torch.autograd import Function
 
 import numpy as np
@@ -57,9 +58,10 @@ class ModelOutputs():
         return target_activations, x
 
 
-class GradCam:
+class GradCam():
     def __init__(self, model, feature_module, target_layer_names):
         self.model = model
+        self.model.eval()
         self.extractor = ModelOutputs(
             model=model,
             feature_module=feature_module,
@@ -73,7 +75,6 @@ class GradCam:
     def __call__(self, input, index=None):
 
         features, output = self.extractor(input)
-
         if index is None:
             index = np.argmax(output.data.numpy())
 
@@ -87,16 +88,19 @@ class GradCam:
         one_hot.backward(retain_graph=True)
 
         grads_val = self.extractor.get_gradients()[-1].data.numpy()
+        # shape: (n_sample, n_channel, length)
         target = features[-1]
-        target = target.data.numpy()[0, :]
+        # shape: (n_sample, n_channel, length)
+        target = target.data.numpy()
 
         weights = np.mean(grads_val, axis=2)[0, :]
-        cam = np.zeros(target.shape[1:], dtype=np.float32)
-
-        for i, w in enumerate(weights):
-            cam += w * target[i, :]
-
-        cam.resize((2048,))
+        cam = weights.reshape((-1, 1)) * target[0, :]
+        resize_transforms = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Resize((15, 2048)),
+            transforms.ToTensor()
+        ])
+        cam = resize_transforms(cam).numpy()
         cam = np.maximum(cam, 0)
         cam = cam - np.min(cam)
         cam = cam / np.max(cam)
@@ -178,16 +182,35 @@ def preprocess_signals(signals):
     return preprocessed_signals.requires_grad_(True)
 
 
-def show_cam_on_image(sample, mask):
-    # FIXME
+def deprocess_signals(img):
+    img = img - np.mean(img)
+    img = img / (np.std(img) + 1e-5)
+    img = img * 0.1
+    img = img + 0.5
+    img = np.clip(img, 0, 1)
+    return np.uint8(img * 255)
 
-    cam = mask + np.float32(sample)
-    cam = (cam / np.max(cam) * 16)[0]
+
+def show_cam_on_image(sample, mask, figure_path):
+    """
+    Given sample (num_channel, duration) and CAM mask,
+    Plot figure of GradCAM explanations.
+    """
+    sample = np.float32(sample.detach().numpy())
+    cam = mask + sample
+    cam = (cam / np.max(cam) * 255)[0]
+    plot_images(cam, figure_path)
+
+
+def plot_images(sample, figure_path):
+    """
+    Plot sample data (15 channels, durations) into a 5 x 3 grid.
+    """
     fig, ax = plt.subplots(5, 3, figsize=(12, 8))
     ax = ax.flatten()
     for i in range(15):
-        ax[i].plot(moving_average(cam[i, :], n=100))
-    plt.savefig("./cam.jpg")
+        ax[i].plot(moving_average(sample[i, :], n=10), color="red")
+    plt.savefig(figure_path)
 
 
 def moving_average(a, n=3):

@@ -4,7 +4,8 @@ import torch
 
 from model import MyCNN
 from explain import GradCam, GuidedBackpropReLUModel
-from explain import preprocess_signals, show_cam_on_image
+from explain import preprocess_signals, deprocess_signals
+from explain import plot_images, show_cam_on_image
 
 
 def simulate_ecg_signal(duration=2048):
@@ -24,8 +25,10 @@ def simulate_ecg_signal(duration=2048):
 def test_GradCam():
 
     # FIXME: Can be moved to fixture
-    model = MyCNN(num_channel=15, num_class=15)
-    data = simulate_ecg_signal(duration=2048)
+    num_channel = 15
+    duration = 2048
+    model = MyCNN(num_channel=num_channel, num_class=15)
+    data = simulate_ecg_signal(duration=duration)
 
     sample = preprocess_signals(data['signal'])
     grad_cam = GradCam(
@@ -33,14 +36,9 @@ def test_GradCam():
         feature_module=model.network[:9],
         target_layer_names=["8"]
     )
-    mask = grad_cam(sample)
-    assert mask.shape == (2048,)
+    cam_mask = grad_cam(sample)
+    assert cam_mask.shape == (1, num_channel, duration)
 
     gb_model = GuidedBackpropReLUModel(model=model.network)
     gb = gb_model(sample)
-    print(gb, gb.shape)
-    assert 1 == 0, "not passing"
-    # gb = gb.transpose((1, 2, 0))
-    # cam_mask = cv2.merge([mask, mask, mask])
-    # cam_gb = deprocess_image(cam_mask*gb)
-    # gb = deprocess_image(gb)
+    assert gb.shape == (num_channel, duration)

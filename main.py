@@ -18,7 +18,7 @@ data_path = join(path, "data_raw.npz")
 label_path = join(path, "meta.csv")
 config_path = join(os.getcwd(), "config.json")
 ckpt_path = join(os.getcwd(), "model_checkpoints")
-model_name = "mycnn-epoch=00-val_loss=0.94.ckpt"
+model_name = "mycnn-epoch=04-val_loss=0.63.ckpt"
 
 
 def train(args, dm, net):
@@ -49,6 +49,7 @@ def train(args, dm, net):
         gpus=args.gpus,
         callbacks=callback_list,
         default_root_dir=ckpt_path,
+        terminate_on_nan=True,
         deterministic=True
     )
     trainer.fit(net, datamodule=dm)
@@ -74,44 +75,53 @@ def explain(args, dm, net):
     """
     Explaining model predictions by visualization
     """
-    from explain import GradCam, show_cam_on_image, preprocess_signals
-    # from explain import GuidedBackpropReLUModel
+    import interpret as inter
     dm.prepare_data()
     dm.setup()
+    data = next(iter(dm.train_dataloader()))
+    sample = inter.preprocess_signals(data['signal'])
 
     model = net.load_from_checkpoint(
         checkpoint_path=join(ckpt_path, model_name),
         num_channel=dm.n_channels,
         num_class=dm.n_classes
     )
-    dataloader = dm.train_dataloader()
-    data = next(iter(dataloader))
-
-    sample = preprocess_signals(data['signal'])
-    # label = data['label']
-
-    grad_cam = GradCam(
+    grad_cam = inter.GradCam(
         model=model.network,
         feature_module=model.network[:9],
         target_layer_names=["8"]
     )
-    mask = grad_cam(sample)
+    cam_mask = grad_cam(sample)
 
-    show_cam_on_image(sample, mask)
+    gb_model = inter.GuidedBackpropReLUModel(model=model.network)
+    gb = gb_model(sample)
+
+    cam_gb = inter.deprocess_signals(cam_mask * gb)[0]
+    gb = inter.deprocess_signals(gb)
+
+    inter.show_cam_on_image(sample=sample, mask=cam_mask, figure_path="./figures/cam.jpg")
+    inter.plot_images(sample=cam_gb, figure_path="./figures/cam_gb.jpg")
+    inter.plot_images(sample=gb, figure_path="./figures/gb.jpg")
 
 
 def main(args):
 
     pl.seed_everything(args.seed)
 
-    ecg_dm = ECGDataModule(data_path, label_path, config_path)
-    net = MyCNN(ecg_dm.n_channels, ecg_dm.n_classes)
-
     if args.mode == "train":
+        ecg_dm = ECGDataModule(data_path, label_path, config_path)
+        net = MyCNN(ecg_dm.n_channels, ecg_dm.n_classes)
         train(args, ecg_dm, net)
+
     elif args.mode == "test":
+        ecg_dm = ECGDataModule(data_path, label_path, config_path)
+        net = MyCNN(ecg_dm.n_channels, ecg_dm.n_classes)
         test(args, ecg_dm, net)
+
     elif args.mode == "explain":
+        explain_config_path = join(os.getcwd(), "single_sample_config.json")
+        ecg_dm = ECGDataModule(data_path, label_path, explain_config_path)
+        net = MyCNN(ecg_dm.n_channels, ecg_dm.n_classes)
         explain(args, ecg_dm, net)
     else:
         raise ValueError(
