@@ -1,35 +1,33 @@
+import pytest
 from os.path import join
 import numpy as np
 import torch
 
 from model import MyCNN
-from explain import GradCam, GuidedBackpropReLUModel
-from explain import preprocess_signals, deprocess_signals
-from explain import plot_images, show_cam_on_image
+from interpret import GradCam, GuidedBackpropReLUModel
+from interpret import preprocess_signals, deprocess_signals
 
 
-def simulate_ecg_signal(duration=2048):
-    """
-    Generate faked ECG signals by specifying time duration.
-    """
-    fake_signal = np.random.rand(1, 15, duration)
-    fake_signal = fake_signal.astype(np.float32)
-    fake_label = np.zeros((15,))
-    fake_label[7] = 1
-    return {
-        "signal": torch.from_numpy(fake_signal),
-        "label": fake_label
-    }
+@pytest.fixture
+def model(const):
+    return MyCNN(
+        num_channel=const["NUM_CHANNEL"],
+        num_class=const["NUM_CLASSES"],
+        chunk_size=const["DURATION"]
+    )
 
 
-def test_GradCam():
+def test_preprocess_signals():
+    pass
 
-    # FIXME: Can be moved to fixture
-    num_channel = 15
-    duration = 2048
-    model = MyCNN(num_channel=num_channel, num_class=15)
-    data = simulate_ecg_signal(duration=duration)
 
+def test_deprocess_signals():
+    pass
+
+
+def test_GradCamAndGB(model, const, helpers):
+
+    data = helpers.simulate_ecg_signal(duration=const["DURATION"])
     sample = preprocess_signals(data['signal'])
     grad_cam = GradCam(
         model=model.network,
@@ -37,8 +35,8 @@ def test_GradCam():
         target_layer_names=["8"]
     )
     cam_mask = grad_cam(sample)
-    assert cam_mask.shape == (1, num_channel, duration)
+    assert cam_mask.shape == (1, const["NUM_CHANNEL"], const["DURATION"])
 
     gb_model = GuidedBackpropReLUModel(model=model.network)
     gb = gb_model(sample)
-    assert gb.shape == (num_channel, duration)
+    assert gb.shape == (const["NUM_CHANNEL"], const["DURATION"])

@@ -1,4 +1,5 @@
 {
+    "chunk_size": 2048,
     "batch_size": 8,
     "validation_split": 0.2,
     "random_seed": 56

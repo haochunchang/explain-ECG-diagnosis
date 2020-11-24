@@ -6,19 +6,22 @@ import os
 from os.path import join
 from argparse import ArgumentParser
 
+import numpy as np
+import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 from datasets import ECGDataModule
 from model import MyCNN
+import utils
 
 path = join(os.getcwd(), "data")
 data_path = join(path, "data_raw.npz")
 label_path = join(path, "meta.csv")
 config_path = join(os.getcwd(), "config.json")
 ckpt_path = join(os.getcwd(), "model_checkpoints")
-model_name = "mycnn-epoch=04-val_loss=0.63.ckpt"
+model_name = "mycnn-epoch=03-val_loss=0.54.ckpt"
 
 
 def train(args, dm, net):
@@ -57,18 +60,37 @@ def train(args, dm, net):
 
 def test(args, dm, net):
 
+    from pytorch_lightning.metrics.functional.classification import confusion_matrix
+
     model = net.load_from_checkpoint(
         checkpoint_path=join(ckpt_path, model_name),
         num_channel=dm.n_channels,
         num_class=dm.n_classes
     )
+    model.eval()
+
+    dm.config["batch_size"] = 1
+    dm.prepare_data()
+    dm.setup()
+
     trainer = pl.Trainer(
         gpus=args.gpus,
         default_root_dir=ckpt_path,
         deterministic=True
     )
-    result = trainer.test(model, datamodule=dm)
-    print(result)
+    trainer.test(model, datamodule=dm)
+
+    cmat = confusion_matrix(
+        torch.stack(model.predictions),
+        torch.stack(model.targets),
+        num_classes=15
+    )
+
+    utils.plot_confusion_matrix(
+        matrix=cmat.numpy(),
+        classes=dm.raw_labels.columns,
+        figure_name="./figures/cmat.jpg"
+    )
 
 
 def explain(args, dm, net):
@@ -107,17 +129,17 @@ def explain(args, dm, net):
 def main(args):
 
     pl.seed_everything(args.seed)
+    ecg_dm = ECGDataModule(data_path, label_path, config_path)
+    net = MyCNN(
+        num_channel=ecg_dm.n_channels,
+        num_classe=ecg_dm.n_classes,
+        chunk_size=ecg_dm.chunk_size
+    )
 
     if args.mode == "train":
-        ecg_dm = ECGDataModule(data_path, label_path, config_path)
-        net = MyCNN(ecg_dm.n_channels, ecg_dm.n_classes)
         train(args, ecg_dm, net)
-
     elif args.mode == "test":
-        ecg_dm = ECGDataModule(data_path, label_path, config_path)
-        net = MyCNN(ecg_dm.n_channels, ecg_dm.n_classes)
         test(args, ecg_dm, net)
-
     elif args.mode == "explain":
         explain_config_path = join(os.getcwd(), "single_sample_config.json")
         ecg_dm = ECGDataModule(data_path, label_path, explain_config_path)

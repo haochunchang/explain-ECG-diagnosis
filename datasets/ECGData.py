@@ -24,6 +24,7 @@ class ECGDataModule(pl.LightningDataModule):
         self.data_path = data_path
         self.n_channels = 15
         self.config = self._load_config(config_path)
+        self.chunk_size = self.config["chunk_size"]
         self.raw_labels = self._extract_labels(label_path)
 
     def _load_config(self, config_path):
@@ -42,11 +43,10 @@ class ECGDataModule(pl.LightningDataModule):
         self.n_classes = len(meta[label_col].unique())
         return pd.get_dummies(meta[label_col])
 
-    def prepare_data(self, chunk_size=2048):
-        # called only on 1 GPU
+    def prepare_data(self):
         path = os.path.dirname(self.data_path)
-        chunks_file_path = join(path, "data-window{}.npy".format(chunk_size))
-        labels_file_path = join(path, "labels-window{}.npy".format(chunk_size))
+        chunks_file_path = join(path, "data-window{}.npy".format(self.chunk_size))
+        labels_file_path = join(path, "labels-window{}.npy".format(self.chunk_size))
 
         if os.path.exists(chunks_file_path) and os.path.exists(labels_file_path):
             self.data = np.load(chunks_file_path)
@@ -54,7 +54,7 @@ class ECGDataModule(pl.LightningDataModule):
         else:
             raw_data = np.load(self.data_path)
             self.data, self.labels = self._split_samples_into_chunks(
-                raw_data, self.raw_labels, chunk_size
+                raw_data, self.raw_labels, self.chunk_size
             )
             np.save(chunks_file_path, self.data)
             np.save(labels_file_path, self.labels)
@@ -78,17 +78,27 @@ class ECGDataModule(pl.LightningDataModule):
         transforms = T.Compose([
             T.ToTensor()
         ])
-        # if stage == "fit" or stage is None:
         self.dataset = ECGDataset(self.data, self.labels, transforms)
 
-        train_indices, val_indices = self._split_data_indices(
-            validation_split=self.config["validation_split"],
+        # Split testing data
+        train_indices, test_indices = self._split_data_indices(
+            validation_split=0.1,
             shuffle_dataset=True
         )
-        self.train_sampler = SubsetRandomSampler(train_indices)
-        self.val_sampler = SubsetRandomSampler(val_indices)
+        self.test_dataset = self.dataset[test_indices]
+        self.dataset = self.dataset[train_indices]
+        print("Train/Valid dataset: {}, Test dataset: {}".format(
+            len(self.dataset), len(self.test_dataset)
+        ))
 
-        # if stage == "test" or stage is None:
+        # Split train/validation data
+        if stage == "fit" or stage is None:
+            train_indices, val_indices = self._split_data_indices(
+                validation_split=self.config["validation_split"],
+                shuffle_dataset=True
+            )
+            self.train_sampler = SubsetRandomSampler(train_indices)
+            self.val_sampler = SubsetRandomSampler(val_indices)
 
     def _split_data_indices(self, validation_split=.2, shuffle_dataset=True):
         """
@@ -121,10 +131,9 @@ class ECGDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(
-            self.dataset,
+            self.test_dataset,
             num_workers=3,
-            batch_size=self.config["batch_size"],
-            sampler=self.val_sampler
+            batch_size=self.config["batch_size"]
         )
 
 

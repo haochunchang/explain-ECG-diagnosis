@@ -8,8 +8,7 @@ setup(
     description='Training models for ECG signal diagnosis',
     author='Hao Chun Chang',
     author_email='changhaochun84@gmail.com',
-    # REPLACE WITH YOUR OWN GITHUB PROJECT LINK
-    url='',
+    url='https://github.com/haochunchang/explain-ECG-diagnosis',
     install_requires=['pytorch-lightning'],
     packages=find_packages(),
 )
