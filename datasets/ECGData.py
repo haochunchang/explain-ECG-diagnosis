@@ -85,8 +85,16 @@ class ECGDataModule(pl.LightningDataModule):
             validation_split=0.1,
             shuffle_dataset=True
         )
-        self.test_dataset = self.dataset[test_indices]
-        self.dataset = self.dataset[train_indices]
+        self.test_dataset = ECGDataset(
+            self.data[test_indices],
+            self.labels[test_indices],
+            transforms
+        )
+        self.dataset = ECGDataset(
+            self.data[train_indices],
+            self.labels[train_indices],
+            transforms
+        )
         print("Train/Valid dataset: {}, Test dataset: {}".format(
             len(self.dataset), len(self.test_dataset)
         ))

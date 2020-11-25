@@ -50,15 +50,15 @@ def plot_confusion_matrix(
     cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
 
     tick_marks = np.arange(len(classes))
-    ax.set_xticks(tick_marks, classes, rotation=90)
-    ax.set_yticks(tick_marks, classes)
+    ax.set_xticks(tick_marks)
+    ax.set_xticklabels(classes)
+    ax.set_yticks(tick_marks)
+    ax.set_yticklabels(classes)
+    plt.setp(ax.get_xticklabels(), rotation=90)
     ax.set_ylabel('True label')
     ax.set_xlabel('Predicted label')
     for edge, spine in ax.spines.items():
         spine.set_visible(False)
-
-    ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
-    ax.tick_params(which="minor", bottom=False, left=False)
 
     plt.tight_layout()
     plt.savefig(figure_name)

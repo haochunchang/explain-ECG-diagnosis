@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # Author: Hao Chun Chang <changhaochun84@gmail.comm>
 #
-# ref: https://github.com/jacobgil/pytorch-grad-cam/blob/master/gradcam.py
+# GradCam: Gradient-weighted Class Activation Mapping
+#
+# Ref: https://github.com/jacobgil/pytorch-grad-cam/blob/master/gradcam.py
 
 import torch
 from torchvision import transforms
