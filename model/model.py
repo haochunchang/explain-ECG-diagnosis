@@ -4,7 +4,7 @@ from torch.optim import Adam
 
 import pytorch_lightning as pl
 from pytorch_lightning.metrics import Accuracy
-from pytorch_lightning.metrics.classification import Fbeta
+from pytorch_lightning.metrics.classification import FBeta
 
 STEP_SIZE = 3
 
@@ -40,9 +40,9 @@ class MyCNN(pl.LightningModule):
         self.train_acc = Accuracy()
         self.valid_acc = Accuracy()
         self.test_acc = Accuracy()
-        self.train_f1 = Fbeta(num_classes=num_class)
-        self.valid_f1 = Fbeta(num_classes=num_class)
-        self.test_f1 = Fbeta(num_classes=num_class)
+        self.train_f1 = FBeta(num_classes=num_class)
+        self.valid_f1 = FBeta(num_classes=num_class)
+        self.test_f1 = FBeta(num_classes=num_class)
 
         self.predictions = []
         self.targets = []
