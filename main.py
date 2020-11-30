@@ -15,8 +15,8 @@ from model import MyCNN
 import utils
 
 path = join(os.getcwd(), "data")
-data_path = join(path, "data_raw.npz")
-label_path = join(path, "meta.csv")
+data_path = join(path, "data_raw_train.npz")
+label_path = join(path, "meta_train.csv")
 config_path = join(os.getcwd(), "config.json")
 
 
@@ -40,7 +40,7 @@ def train(args, dm, net):
     )
     checkpoint_callback = ModelCheckpoint(
         monitor="val_loss",
-        dirpath=args["ckpt_path"],
+        dirpath=args.ckpt_path,
         filename="mycnn-{epoch:02d}-{val_loss:.2f}",
         save_top_k=1,
         mode="min"
@@ -85,7 +85,7 @@ def test(args, dm, net):
 
     utils.plot_confusion_matrix(
         matrix=cmat.numpy(),
-        classes=dm.raw_labels.columns,
+        classes=dm.raw_Y.columns,
         figure_name="./figures/cmat.jpg"
     )
 
@@ -153,8 +153,16 @@ def main(args):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Main entry point of this project.")
-    parser.add_argument("mode", type=str, help="Specifying modes: ['train', 'test', 'explain']")
-    parser.add_argument("--ckpt_path", type=str, help="Checkpoint path for testing or explaining")
+    parser.add_argument(
+        "mode",
+        type=str,
+        help="Specifying modes: ['train', 'test', 'explain']"
+    )
+    parser.add_argument(
+        "--ckpt_path",
+        default="./model_checkpoints",
+        help="Checkpoint path for storing models"
+    )
     parser.add_argument("--gpus", default=None, help="Numbers of gpus")
     parser.add_argument("--seed", default=56, help="Random seed for all")
 

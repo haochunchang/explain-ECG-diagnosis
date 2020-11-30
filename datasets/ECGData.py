@@ -25,7 +25,7 @@ class ECGDataModule(pl.LightningDataModule):
         self.n_channels = 15
         self.config = self._load_config(config_path)
         self.chunk_size = self.config["chunk_size"]
-        self.raw_labels = self._extract_labels(label_path)
+        self.raw_Y = self._extract_labels(label_path)
 
     def _load_config(self, config_path):
         with open(config_path, "r") as f:
@@ -45,19 +45,19 @@ class ECGDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         path = os.path.dirname(self.data_path)
-        chunks_file_path = join(path, "data-window{}.npy".format(self.chunk_size))
-        labels_file_path = join(path, "labels-window{}.npy".format(self.chunk_size))
+        chunks_path = join(path, "data-window{}-train.npy".format(self.chunk_size))
+        labels_path = join(path, "labels-window{}-train.npy".format(self.chunk_size))
 
-        if os.path.exists(chunks_file_path) and os.path.exists(labels_file_path):
-            self.data = np.load(chunks_file_path)
-            self.labels = np.load(labels_file_path)
+        if os.path.exists(chunks_path) and os.path.exists(labels_path):
+            self.data = np.load(chunks_path)
+            self.labels = np.load(labels_path)
         else:
-            raw_data = np.load(self.data_path)
+            raw_X = np.load(self.data_path)
             self.data, self.labels = self._split_samples_into_chunks(
-                raw_data, self.raw_labels, self.chunk_size
+                raw_X, self.raw_Y, chunk_size=self.chunk_size
             )
-            np.save(chunks_file_path, self.data)
-            np.save(labels_file_path, self.labels)
+            np.save(chunks_path, self.data)
+            np.save(labels_path, self.labels)
 
     def _split_samples_into_chunks(self, data, label, chunk_size):
         print("Spliting samples into chunks...")

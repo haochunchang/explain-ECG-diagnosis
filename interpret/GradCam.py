@@ -178,19 +178,36 @@ class GuidedBackpropReLUModel:
 
 def preprocess_signals(signals):
     """
-    Preprocess signals as Torch Tensors
+    Preprocess signals as Torch Tensors with gradients.
+
+    Arguments
+    ---------
+    signals: numpy.ndarray
+
+    Returns
+    -------
+    processed_signals: torch.Tensors
     """
     preprocessed_signals = signals.squeeze(0).view((signals.shape[0], 15, -1))
     return preprocessed_signals.requires_grad_(True)
 
 
-def deprocess_signals(img):
-    img = img - np.mean(img)
-    img = img / (np.std(img) + 1e-5)
-    img = img * 0.1
-    img = img + 0.5
-    img = np.clip(img, 0, 1)
-    return np.uint8(img * 255)
+def deprocess_signals(signals):
+    """
+    Normalize signals to 0-255 gray levels.
+
+    Arguments
+    ---------
+    signals: numpy.ndarray
+
+    Returns
+    -------
+    normalized signals: numpy.ndarray
+    """
+    signals = signals - np.mean(signals)
+    signals = signals / (np.std(signals) + 1e-5)
+    signals = np.clip(signals, 0, 1)
+    return np.uint8(signals * 255)
 
 
 def show_cam_on_image(sample, mask, figure_path):

@@ -17,15 +17,14 @@ def model(const):
     )
 
 
-def test_preprocess_signals():
-    pass
+def test_processing_signals(const, helpers):
+    data = helpers.simulate_ecg_signal(duration=const["DURATION"])
+    processed_signals = preprocess_signals(data["signal"])
+    assert processed_signals.shape == (1, 15, 2048)
+    assert processed_signals.requires_grad
 
 
-def test_deprocess_signals():
-    pass
-
-
-def test_GradCamAndGB(model, const, helpers):
+def test_GradCam_and_GuidedBackprop(model, const, helpers):
 
     data = helpers.simulate_ecg_signal(duration=const["DURATION"])
     sample = preprocess_signals(data['signal'])
