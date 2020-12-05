@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Author: Hao Chun Chang <changhaochun84@gmail.comm>
+#
+# Definition of the network system
+
 import torch
 import torch.nn as nn
 from torch.optim import Adam
@@ -5,8 +10,6 @@ from torch.optim import Adam
 import pytorch_lightning as pl
 from pytorch_lightning.metrics import Accuracy
 from pytorch_lightning.metrics.classification import FBeta
-
-STEP_SIZE = 3
 
 
 class MyCNN(pl.LightningModule):
@@ -17,16 +20,16 @@ class MyCNN(pl.LightningModule):
         self.num_channel = num_channel
         self.chunk_size = chunk_size
         self.network = nn.Sequential(
-            nn.Conv1d(self.num_channel, 16, STEP_SIZE),
-            nn.Conv1d(16, 32, STEP_SIZE, padding=1),
+            nn.Conv1d(self.num_channel, 16, 3),
+            nn.Conv1d(16, 32, 3, padding=1),
             nn.MaxPool1d(2, stride=2),
-            nn.Conv1d(32, 32, STEP_SIZE, padding=1),
+            nn.Conv1d(32, 32, 3, padding=1),
             nn.MaxPool1d(2, stride=2),
-            nn.Conv1d(32, 32, STEP_SIZE, padding=1),
+            nn.Conv1d(32, 32, 3, padding=1),
             nn.MaxPool1d(2, stride=2),
-            nn.Conv1d(32, 64, STEP_SIZE, padding=1),
+            nn.Conv1d(32, 64, 3, padding=1),
             nn.MaxPool1d(2, stride=2),
-            nn.Conv1d(64, 64, STEP_SIZE, padding=1),
+            nn.Conv1d(64, 64, 3, padding=1),
             nn.MaxPool1d(2, stride=2),
             nn.Flatten(),
             nn.Linear(4032, 1024),

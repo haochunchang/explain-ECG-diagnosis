@@ -1,11 +1,11 @@
+import pytest
 import sys
-from distutils import dir_util
 from os.path import dirname, isdir, join
 
-import pytest
+from model import MyCNN
 
 sys.path.append(
-    dirname(join(__file__))
+    dirname(__file__)
 )
 
 
@@ -16,6 +16,15 @@ def const():
         "NUM_CLASSES": 15,
         "DURATION": 2048
     }
+
+
+@pytest.fixture
+def model(const):
+    return MyCNN(
+        num_channel=const["NUM_CHANNEL"],
+        num_class=const["NUM_CLASSES"],
+        chunk_size=const["DURATION"]
+    )
 
 
 class Helpers:
@@ -52,6 +61,7 @@ def datadir(tmpdir, request):
     Returns:
         tmpdir: py.path.local object, can access temp dir like os.path
     '''
+    from distutils import dir_util
     basedir = dirname(request.module.__file__)
     test_dir = basedir
     if isdir(test_dir):

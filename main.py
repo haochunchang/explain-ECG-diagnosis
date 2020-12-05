@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Author: Hao Chun Chang <changhaochun84@gmail.comm>
 #
+# Entry-point for training, testing, and explaining models
 
 import os
 from os.path import join
@@ -58,9 +59,7 @@ def train(args, dm, net):
 
 
 def test(args, dm, net):
-    """
-    Test the model.
-    """
+
     from pytorch_lightning.metrics.functional.classification import confusion_matrix
 
     model = net.load_from_checkpoint(
@@ -91,39 +90,42 @@ def test(args, dm, net):
 
 
 def explain(args, dm, net):
-    """
-    Explaining model predictions by visualization.
-    """
-    import interpret as inter
 
-    dm.config["batch_size"] = 1
-    dm.prepare_data()
-    dm.setup()
-
-    data = next(iter(dm.train_dataloader()))
-    sample = inter.preprocess_signals(data["signal"])
+    from interpret import Explainer
 
     model = net.load_from_checkpoint(
         checkpoint_path=args.ckpt_path,
         num_channel=dm.n_channels,
         num_class=dm.n_classes
     )
-    grad_cam = inter.GradCam(
-        model=model.network,
-        feature_module=model.network[:9],
-        target_layer_names=["8"]
+    dm.config["batch_size"] = 1
+    dm.prepare_data()
+    dm.setup()
+
+    print("Generating explanation using GradCam...")
+    data = next(iter(dm.train_dataloader()))
+    sample = utils.preprocess_signals(data["signal"])
+    label = data["label"].numpy().argmax()
+
+    # GradCamExplainer = Explainer(
+    #     "GradCam",
+    #     model=model.network,
+    #     feature_module=model.network[:9],
+    #     target_layer_names=["8"]
+    # )
+    # cam_mask = GradCamExplainer.explain_instance(sample)
+    # utils.show_cam_on_image(sample=sample, mask=cam_mask, figure_path="./figures/gradcam.jpg")
+
+    print("Generating explanation using LIME...")
+    LimeExplainer = Explainer("Lime", model=model)
+    explanation = LimeExplainer.explain_instance(data["signal"], labels=[label])
+    sample, mask = explanation.get_instance_and_mask(label)
+    print(sample.shape, mask.shape, (sample * mask).shape)
+
+    utils.plot_images(
+        sample=sample * mask,
+        figure_path="./figures/lime_label{}.jpg".format(label)
     )
-    cam_mask = grad_cam(sample)
-
-    gb_model = inter.GuidedBackpropReLUModel(model=model.network)
-    gb = gb_model(sample)
-
-    cam_gb = inter.deprocess_signals(cam_mask * gb)[0]
-    gb = inter.deprocess_signals(gb)
-
-    inter.show_cam_on_image(sample=sample, mask=cam_mask, figure_path="./figures/cam.jpg")
-    inter.plot_images(sample=cam_gb, figure_path="./figures/cam_gb.jpg")
-    inter.plot_images(sample=gb, figure_path="./figures/gb.jpg")
 
 
 def main(args):

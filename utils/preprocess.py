@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 # Author: Hao Chun Chang <changhaochun84@gmail.comm>
 #
-#
+# **One-time script**
 # Data preprocessing prior to entering main.py
+
 from os.path import join
 import pandas as pd
 import numpy as np
