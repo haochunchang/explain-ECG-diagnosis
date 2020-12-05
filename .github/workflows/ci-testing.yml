@@ -59,7 +59,7 @@ jobs:
 
     - name: Tests
       run: |
-        coverage run -m py.test model datasets tests -v --junitxml=junit/test-results-${{ runner.os }}-${{ matrix.python-version }}.xml
+        coverage run -m py.test tests -v --junitxml=junit/test-results-${{ runner.os }}-${{ matrix.python-version }}.xml
 
     - name: Statistics
       if: success()

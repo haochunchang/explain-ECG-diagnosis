@@ -25,7 +25,7 @@ class Explainer:
             "Lime"
         }
         self.__check_explain_methods(explain_method)
-        module = import_module("interpret.{}".format(explain_method))
+        module = import_module(explain_method)
         self.__explainer = getattr(module, explain_method)(**kwargs)
 
     @property

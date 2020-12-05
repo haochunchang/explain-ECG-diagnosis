@@ -107,14 +107,14 @@ def explain(args, dm, net):
     sample = utils.preprocess_signals(data["signal"])
     label = data["label"].numpy().argmax()
 
-    # GradCamExplainer = Explainer(
-    #     "GradCam",
-    #     model=model.network,
-    #     feature_module=model.network[:9],
-    #     target_layer_names=["8"]
-    # )
-    # cam_mask = GradCamExplainer.explain_instance(sample)
-    # utils.show_cam_on_image(sample=sample, mask=cam_mask, figure_path="./figures/gradcam.jpg")
+    GradCamExplainer = Explainer(
+        "GradCam",
+        model=model.network,
+        feature_module=model.network[:9],
+        target_layer_names=["8"]
+    )
+    cam_mask = GradCamExplainer.explain_instance(sample)
+    utils.show_cam_on_image(sample=sample, mask=cam_mask, figure_path="./figures/gradcam.jpg")
 
     print("Generating explanation using LIME...")
     LimeExplainer = Explainer("Lime", model=model)
