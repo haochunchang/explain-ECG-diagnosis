@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author: Hao Chun Chang <changhaochun84@gmail.comm>
 #
@@ -5,7 +6,7 @@
 import sys
 from importlib import import_module
 from os.path import dirname
-sys.path.insert(1, dirname(__file__))
+sys.path.append(dirname(__file__))
 
 
 class Explainer:
@@ -22,7 +23,7 @@ class Explainer:
         """
         self.__available_methods = {
             "GradCam",
-            "Lime"
+            "LIME"
         }
         self.__check_explain_methods(explain_method)
         module = import_module(explain_method)

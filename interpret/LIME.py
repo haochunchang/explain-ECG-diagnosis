@@ -19,7 +19,7 @@ from torch import Tensor
 import tqdm
 
 
-class Lime:
+class LIME:
     """
     Explains predictions on ECG signal data.
 

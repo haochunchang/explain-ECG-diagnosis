@@ -25,7 +25,7 @@ def test_LimeExplainer(model, const, helpers):
     signal = data["signal"]
     label = data["label"].argmax()
 
-    LimeExplainer = Explainer("Lime", model=model)
+    LimeExplainer = Explainer("LIME", model=model)
     explanation = LimeExplainer.explain_instance(signal, labels=[label])
     sample, mask = explanation.get_instance_and_mask(label)
     assert sample.shape == mask.shape
