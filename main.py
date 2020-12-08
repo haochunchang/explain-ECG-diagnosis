@@ -117,13 +117,12 @@ def explain(args, dm, net):
     utils.show_cam_on_image(sample=sample, mask=cam_mask, figure_path="./figures/gradcam.jpg")
 
     print("Generating explanation using LIME...")
-    LimeExplainer = Explainer("Lime", model=model)
+    LimeExplainer = Explainer("LIME", model=model)
     explanation = LimeExplainer.explain_instance(data["signal"], labels=[label])
     sample, mask = explanation.get_instance_and_mask(label)
-    print(sample.shape, mask.shape, (sample * mask).shape)
-
+    masked_sample = (sample * mask)[0].transpose()
     utils.plot_images(
-        sample=sample * mask,
+        sample=masked_sample,
         figure_path="./figures/lime_label{}.jpg".format(label)
     )
 
