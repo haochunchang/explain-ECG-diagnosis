@@ -40,7 +40,7 @@ class LIME:
         ---------
         model: classifier prediction probability function, which
                 takes a numpy array and outputs prediction probabilities.
-        Other parameters see LimeBase for detail. 
+        Other parameters see LimeBase for detail.
         """
         kernel_width = float(kernel_width)
 
