@@ -2,7 +2,7 @@
  
 # Explaining ECG Diagnosis
 
-![CI testing](https://github.com/haochunchang/explain-ECG-diagnosis/workflows/CI%20testing/badge.svg?branch=master&event=push)
+![CI testing](https://github.com/haochunchang/explain-ECG-diagnosis/workflows/CI%20testing/badge.svg?branch=main&event=push)
 
 </div>
 
@@ -48,4 +48,5 @@ The data is from [The PTB Diagnostic ECG Database](https://archive.physionet.org
 - Evaluation
     * Using Accuracy, F1 score and confusion matrix on testing dataset.
 - Interpretation
-    * Modified Gradient-weighted Class Activation Mapping (Grad-CAM)
+    * Modified Gradient-weighted Class Activation Mapping (Grad-CAM).
+    * Modified Local Interpretable Model-agnostic Explanations (LIME).
