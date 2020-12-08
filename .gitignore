@@ -33,7 +33,7 @@ default/
 data/
 test_tube_logs/
 test_tube_data/
-model_weights/
+model_checkpoints/
 tests/save_dir  
 tests/tests_tt_dir/
 processed/
@@ -93,7 +93,11 @@ venv.bak/
 
 # IDEs
 .vscode
+.devcontainer/
 
 # seed project
 lightning_logs/
 .DS_Store
+
+# Images
+*.jpg
